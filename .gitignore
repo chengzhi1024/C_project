@@ -3,4 +3,4 @@
 .gitigore
 .CMakeLists.txt
 # Project exclude paths
-/cmake-build-debug/
+/cmake-build-debug
