@@ -1,7 +1,7 @@
 //
 // Created by yang on 2019/6/24.
 //
-#pragma once
+
 #ifndef _SQL_WRAP_H
 #define _SQL_WRAP_H
 

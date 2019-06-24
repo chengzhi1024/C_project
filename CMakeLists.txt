@@ -3,4 +3,4 @@ project(C_project C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(C_project main.c sql.h sql.c Server.c Server.h " Client.c" " Client.h" sql_test.c)
+add_executable(C_project main.c db_mysql.h db_mysql.c Server.c Server.h " Client.c" " Client.h" db_mysql_test.c)
