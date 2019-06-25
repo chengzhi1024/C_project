@@ -1,9 +1,40 @@
-//
-//
-//#include <stdio.h>
-//#include "db_mysql/db_mysql.h"
-//
-//int main() {
+
+
+#include <stdio.h>
+#include "db_mysql/db_interface.h"
+#include "business.h"
+
+
+int main(int argc, char *argv[])
+    {
+        int iRet;
+        /* 获取数据库操作句柄 */
+        void **ppvDBHandle  = get_handle();
+
+        /* 初始化数据库 */
+        iRet = db_init(ppvDBHandle);
+        if (iRet) return iRet;
+        printf("db_init:%s\n", db_get_error(*ppvDBHandle));
+
+        /* 连接数据库 */
+        iRet = db_connect(*ppvDBHandle, "localhost", 3306, "root", "123456", "library_system");
+        printf("db_connect iRet:%d\n", iRet);
+        printf("%s\n", db_get_error(*ppvDBHandle));
+        if (iRet) return iRet;
+
+        // 初始化socket服务，进入socket事件循环
+        recv_handle_t cb = exec_business;
+        int iSockFd = socket_init(9999);
+        socket_accept(iSockFd, cb);
+
+        /* 退出系统 */
+        socket_uninit(iSockFd);
+        db_uninit(*ppvDBHandle);
+
+        return 0;
+    }
+
+
 //    void *pvDBHandle = NULL;
 //    void **ppvDBHandle = NULL;
 //    char *pcszDBName = NULL;
@@ -28,7 +59,7 @@
 //    db_uninit(pvDBHandle);
 //    db_get_error(ppvDBHandle);
 //    printf("Hello, World!\n");
-//    return 0;
-//}
+    return 0;
+}
 
 
