@@ -15,6 +15,19 @@ typedef struct admin_response {
     char sErrorDetail[24];
 }admin_response_t;
 
+typedef struct book_info{
+    char sbookId[24];
+    char sbookName[50];
+    char sbookAuthor[24];
+    int ibookStock;
+    int ibookRemain;
+    int ibookTimes;
+    char sbookCategory[24];
+    char sbookPublisher[50];
+    char sbookPublicationDate[24];
+}book_item_info_t;
+
+
 void** get_handle();
 int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLen);
 
