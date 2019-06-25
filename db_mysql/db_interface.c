@@ -188,6 +188,7 @@ int db_update(void *pvDBHandle, const char *pSqlCommand)
  * @param pvData  回调函数的一个参数，接收回调函数传回来的信息
  * @return 成功返回0，失败返回1
  */
+
 int db_query(void *pvDBHandle, const char *pSqlCommand, db_fetch_callback_t cb, void *pvData)
 {
     int iRet;
