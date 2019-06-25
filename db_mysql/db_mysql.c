@@ -5,7 +5,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sql.h>
+#include <winsock2.h>
+#include "db_mysql.h"
+#include "mysql.h"
 
 static void print_sql_error(MYSQL *sql_conn, const char *msg)
 {

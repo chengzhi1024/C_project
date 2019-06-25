@@ -18,18 +18,30 @@ extern "C" {
 #else
 #define DEBUG(format, ...)
 #endif
-typedef int (*db_fetch_callback_t)(char **ppcArgs, int iRow, int iCol);
+
+typedef int (*db_fetch_callback_t)(char **ppcArgs, int iRow, int iCol,void *pvData);
 
 int db_init(void **ppvDBHandle);
+
 int create_database(void *pvDBHandle, const char *pcszDBName);
+
 int create_table(void *pvDBHandle, const char *pcszTable, const char *pcszSqlCommand);
-int db_connect(void *pvDBHandle, const char *c_pszHost, short nPort, const char *c_pszUser, const char *c_pszPassword, const char *c_szDBName);
+
+int db_connect(void *pvDBHandle, const char *c_pszHost, short nPort, const char *c_pszUser, const char *c_pszPassword,
+               const char *c_szDBName);
+
 int db_insert(void *pvDBHandle, const char *pSqlCommand);
+
 int db_delete(void *pvDBHandle, const char *pSqlCommand);
+
 int db_update(void *pvDBHandle, const char *pSqlCommand);
-int db_query(void *pvDBHandle, const char *pSqlCommand, db_fetch_callback_t cb);
+
+int db_query(void *pvDBHandle, const char *pSqlCommand, db_fetch_callback_t cb, void *iCbRet);
+
 void db_uninit(void *pvDBHandle);
-const char* db_get_error(void *ppvDBHandle);
+
+const char *db_get_error(void *ppvDBHandle);
+
 #ifdef __cplusplus
 }
 #endif
