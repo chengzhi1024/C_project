@@ -51,7 +51,7 @@ static void admin_login_in(cJSON *root, char *pResponse, int iResLen) {
              stAdmin.sAdminId);
 
     /* 查询数据库是否存在adminId对应的管理员 */
-    db_query( *ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
+    db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
     //如果admin_login_in_callback返回值iCbRet不为0，即adminId对应的管理员是否存在 否则返回admin_response_t错误信息
     if (0 != iCbRet) {
         stAdminResponse.iErrorCode = -3;
@@ -72,13 +72,13 @@ static void admin_login_in(cJSON *root, char *pResponse, int iResLen) {
             strcpy(stAdminResponse.sErrorDetail, "LIBRARY_PASSWD_ERROR");
         } else {
             stAdminResponse.iErrorCode = 0;
-            strcpy(stAdminResponse.sErrorDetail, "success");
+            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_OK");
         }
     }
 
     /* 组装数据库为json字符串 */
     cJSON *json = cJSON_CreateObject();
-    if (!json) return ;
+    if (!json) return;
     cJSON_AddNumberToObject(json, "messageId", 1001);
     cJSON_AddNumberToObject(json, "errorCode", stAdminResponse.iErrorCode);
     cJSON_AddStringToObject(json, "errorDetail", stAdminResponse.sErrorDetail);
@@ -131,38 +131,34 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
            stAdmin.sAdminId, stAdmin.sAdminPasswd, stAdmin.sAdminName);
 
     //将查询信息打印（复制）到字符串szSqlBuffer
-    snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_admin where adminId=\"%s\";",
-             stAdmin.sAdminId);
+    snprintf(szSqlBuffer, sizeof(szSqlBuffer), "insert into lib_admin values ('%s','%s','%s');",
+             stAdmin.sAdminId, stAdmin.sAdminPasswd, stAdmin.sAdminName);
+
 
     /* 查询数据库是否存在adminId对应的管理员 */
-    db_query( *ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
-    //如果admin_login_in_callback返回值iCbRet不为0，即adminId对应的管理员是否存在 否则返回admin_response_t错误信息
-    if (0 != iCbRet) {
-        stAdminResponse.iErrorCode = -3;
-        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
-    }
-
+    db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
     if (0 == iCbRet) {
-        iCbRet = -1;
-        //继续生成查询用户的其他信息的命令
-        snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                 "select * from lib_admin where adminId=\"%s\" and adminPasswd=\"%s\";",
-                 stAdmin.sAdminId, stAdmin.sAdminPasswd);
-        //继续查询用户的其他信息是否存在 用户名和密码是否正确
-        db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, (void *) &iCbRet);
-        //再次判断用户名和密码是否正确，否则返回admin_response_t
+        stAdminResponse.iErrorCode = -4;
+        strcpy(stAdminResponse.sErrorDetail, "ADMIN_ALREADY_EXIST");
+    }
+    if (0 != iCbRet) {
+        /* 插入管理员 */
+        iCbRet = db_insert(*ppvDBHandle, szSqlBuffer);
+        //如果iCbRet不为0，则插入成功 否则返回admin_response_t错误信息
         if (0 != iCbRet) {
-            stAdminResponse.iErrorCode = -1;
-            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_PASSWD_ERROR");
-        } else {
+            stAdminResponse.iErrorCode = -3;
+            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+        }
+        //如果iCbRet为0，则插入成功
+        if (0 == iCbRet) {
             stAdminResponse.iErrorCode = 0;
-            strcpy(stAdminResponse.sErrorDetail, "0k");
+            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_0k");
         }
     }
 
     /* 组装数据库为json字符串 */
     cJSON *json = cJSON_CreateObject();
-    if (!json) return ;
+    if (!json) return;
     cJSON_AddNumberToObject(json, "messageId", 1002);
     cJSON_AddNumberToObject(json, "errorCode", stAdminResponse.iErrorCode);
     cJSON_AddStringToObject(json, "errorDetail", stAdminResponse.sErrorDetail);
