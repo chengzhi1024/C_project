@@ -9,21 +9,18 @@
 #include "db_mysql.h"
 #include "mysql.h"
 
-static void print_sql_error(MYSQL *sql_conn, const char *msg)
-{
-    if(msg)
+static void print_sql_error(MYSQL *sql_conn, const char *msg) {
+    if (msg)
         printf("%s: %s\n", msg, mysql_error(sql_conn));
     else
         printf("%s\n", mysql_error(sql_conn));
 }
 
-static int db_exec_sql(MYSQL *sql_conn, const char *sql)
-{
+static int db_exec_sql(MYSQL *sql_conn, const char *sql) {
     return mysql_real_query(sql_conn, sql, strlen(sql));
 }
 
-int create_database(void *pvDBHandle, const char *pcszDBName)
-{
+int create_database(void *pvDBHandle, const char *pcszDBName) {
     MYSQL *pSqlConn = pvDBHandle;
     char sql[SQL_COMMAND_MAX_SIZE] = {0};
     if (NULL == pcszDBName) return -1;
@@ -37,8 +34,7 @@ int create_database(void *pvDBHandle, const char *pcszDBName)
         snprintf(sql, sizeof(sql), "use %s;", pcszDBName);
         db_exec_sql(pSqlConn, sql);
         print_sql_error(pSqlConn, NULL);
-    }
-    else {
+    } else {
         snprintf(sql, sizeof(sql), "use %s;", pcszDBName);
         db_exec_sql(pSqlConn, sql);
         print_sql_error(pSqlConn, NULL);
@@ -47,8 +43,7 @@ int create_database(void *pvDBHandle, const char *pcszDBName)
     return 0;
 }
 
-int create_table(void *pvDBHandle, const char *pcszTable, const char *pcszSqlCommand)
-{
+int create_table(void *pvDBHandle, const char *pcszTable, const char *pcszSqlCommand) {
     int iRet = -1;
     MYSQL_RES *res;
     MYSQL_ROW row;
@@ -69,21 +64,19 @@ int create_table(void *pvDBHandle, const char *pcszTable, const char *pcszSqlCom
     return iRet;
 }
 
-const char* db_get_error(void *ppvDBHandle)
-{
-    return mysql_error((MYSQL *)ppvDBHandle);
+const char *db_get_error(void *ppvDBHandle) {
+    return mysql_error((MYSQL *) ppvDBHandle);
 }
 
-int db_init(void **ppvDBHandle)
-{
+int db_init(void **ppvDBHandle) {
     if (NULL == ppvDBHandle) return -1;
     *ppvDBHandle = mysql_init(NULL);
     if (NULL == *ppvDBHandle) return -1;
     else return 0;
 }
 
-int db_connect(void *pvDBHandle, const char *pcszHost, short nPort, const char *pcszUser, const char *pcszPassword, const char *pcszDBName)
-{
+int db_connect(void *pvDBHandle, const char *pcszHost, short nPort, const char *pcszUser, const char *pcszPassword,
+               const char *pcszDBName) {
     MYSQL *pSqlConn = pvDBHandle;
     if (NULL == pvDBHandle || NULL == pcszHost || NULL == pcszUser || NULL == pcszPassword) return -1;
     if (NULL == mysql_real_connect(pSqlConn, pcszHost, pcszUser, pcszPassword, pcszDBName, nPort, NULL, 0)) {
@@ -92,8 +85,7 @@ int db_connect(void *pvDBHandle, const char *pcszHost, short nPort, const char *
     return mysql_set_character_set(pSqlConn, "utf8");
 }
 
-int db_insert(void *pvDBHandle, const char *pSqlCommand)
-{
+int db_insert(void *pvDBHandle, const char *pSqlCommand) {
     MYSQL *pSqlConn = pvDBHandle;
     if (NULL == pvDBHandle || NULL == pSqlCommand) {
         return -1;
@@ -101,8 +93,7 @@ int db_insert(void *pvDBHandle, const char *pSqlCommand)
     return db_exec_sql(pSqlConn, pSqlCommand);
 }
 
-int db_delete(void *pvDBHandle, const char *pSqlCommand)
-{
+int db_delete(void *pvDBHandle, const char *pSqlCommand) {
     MYSQL *pSqlConn = pvDBHandle;
     if (NULL == pvDBHandle || NULL == pSqlCommand) {
         return -1;
@@ -110,8 +101,7 @@ int db_delete(void *pvDBHandle, const char *pSqlCommand)
     return db_exec_sql(pSqlConn, pSqlCommand);
 }
 
-int db_update(void *pvDBHandle, const char *pSqlCommand)
-{
+int db_update(void *pvDBHandle, const char *pSqlCommand) {
     MYSQL *pSqlConn = pvDBHandle;
     if (NULL == pvDBHandle || NULL == pSqlCommand) {
         return -1;
@@ -119,8 +109,7 @@ int db_update(void *pvDBHandle, const char *pSqlCommand)
     return db_exec_sql(pSqlConn, pSqlCommand);
 }
 
-int db_query(void *pvDBHandle, const char *pSqlCommand, db_fetch_callback_t cb)
-{
+int db_query(void *pvDBHandle, const char *pSqlCommand, db_fetch_callback_t cb, void *iCbRet) {
     int iRet;
     int iRow, iCol, iCurRow = 0;
     char **ppRow;
@@ -135,21 +124,17 @@ int db_query(void *pvDBHandle, const char *pSqlCommand, db_fetch_callback_t cb)
 
     iRow = mysql_num_rows(result);
     iCol = mysql_num_fields(result);
-    while(ppRow = mysql_fetch_row(result)) {
+    while (ppRow = mysql_fetch_row(result)) {
         if (ppRow) {
-            if (cb(ppRow, ++iCurRow, iCol))
+            if (cb(ppRow, ++iCurRow, iCol, iCbRet))
                 break;
         }
     }
-
     mysql_free_result(result);
-
     return 0;
-
 }
 
-void db_uninit(void *pvDBHandle)
-{
+void db_uninit(void *pvDBHandle) {
     if (NULL != pvDBHandle) mysql_close(pvDBHandle);
 }
 
