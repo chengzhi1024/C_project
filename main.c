@@ -42,10 +42,13 @@ int main() {
 //    cJSON_AddStringToObject(root, "adminPasswd", "456");
 //    cJSON_AddStringToObject(root, "adminName", "yang");
 
-    cJSON_AddNumberToObject(root, "messageId", 1003);
-    cJSON_AddStringToObject(root, "adminId", "1");
-    cJSON_AddStringToObject(root, "adminOldPasswd", "456");
-    cJSON_AddStringToObject(root, "adminNewPasswd", "789");
+//    cJSON_AddNumberToObject(root, "messageId", 1003);
+//    cJSON_AddStringToObject(root, "adminId", "1");
+//    cJSON_AddStringToObject(root, "adminOldPasswd", "456");
+//    cJSON_AddStringToObject(root, "adminNewPasswd", "789");
+//
+    cJSON_AddNumberToObject(root, "messageId", 1004);
+    cJSON_AddStringToObject(root, "adminId", "3");
     char *out = cJSON_PrintUnformatted(root);
 
     char *pRequest = out;
