@@ -37,10 +37,10 @@ int main() {
     //创建一个cjson结构体指针
     cJSON *root = cJSON_CreateObject();
     //添加键值队
-    cJSON_AddNumberToObject(root, "messageId", 1001);
-    cJSON_AddStringToObject(root, "adminId", "1");
-    cJSON_AddStringToObject(root, "adminPasswd", "123");
-    cJSON_AddStringToObject(root, "adminName", "admin");
+    cJSON_AddNumberToObject(root, "messageId", 1002);
+    cJSON_AddStringToObject(root, "adminId", "3");
+    cJSON_AddStringToObject(root, "adminPasswd", "456");
+    cJSON_AddStringToObject(root, "adminName", "yang");
     char *out = cJSON_PrintUnformatted(root);
 
     char *pRequest = out;
