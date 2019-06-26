@@ -16,7 +16,7 @@ int main() {
 
     int iRet;
     /* 获取数据库操作句柄 */
-    void **ppvDBHandle  = get_handle();
+    void **ppvDBHandle = get_handle();
 
     /* 初始化数据库 */
     iRet = db_init(ppvDBHandle);
@@ -47,14 +47,37 @@ int main() {
 //    cJSON_AddStringToObject(root, "adminOldPasswd", "456");
 //    cJSON_AddStringToObject(root, "adminNewPasswd", "789");
 //
-    cJSON_AddNumberToObject(root, "messageId", 1004);
-    cJSON_AddStringToObject(root, "adminId", "3");
+//    cJSON_AddNumberToObject(root, "messageId", 1004);
+//    cJSON_AddStringToObject(root, "adminId", "0001");
+
+//    cJSON_AddNumberToObject(root, "messageId", 5001);
+//    cJSON_AddStringToObject(root, "userNum", "4");
+//    cJSON_AddStringToObject(root, "userName", "yang");
+//    cJSON_AddStringToObject(root, "userSex", "");
+//    cJSON_AddStringToObject(root, "userRemark", "");
+
+//    cJSON_AddNumberToObject(root, "messageId", 5003);
+//    cJSON_AddStringToObject(root, "userNum", "");
+
+
+
+    cJSON_AddNumberToObject(root, "messageId", 2002);
+    cJSON_AddStringToObject(root, "bookId", "123123");
+    cJSON_AddStringToObject(root, "bookName", "yang");
+    cJSON_AddStringToObject(root, "bookAuthor", "yangv");
+    cJSON_AddNumberToObject(root, "bookAddNumber", 50);
+//    cJSON_AddStringToObject(root, "bookRemain", "");
+//    cJSON_AddStringToObject(root, "bookTimes", "");
+    cJSON_AddStringToObject(root, "bookCategory", "数学");
+    cJSON_AddStringToObject(root, "bookPublisher", "触犯");
+    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
+
     char *out = cJSON_PrintUnformatted(root);
 
     char *pRequest = out;
-    int iReqLen=1024;
+    int iReqLen = 1024;
     char pResponse[1024];
-    int iResLen=1024;
+    int iResLen = 1024;
 
     printf("pRequest:%s\n", pRequest);
     exec_business(pRequest, iReqLen, pResponse, iResLen);
