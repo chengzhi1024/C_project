@@ -588,7 +588,7 @@ static void Add_user_in(cJSON *root, char *pResponse, int iResLen)
 /* 组装数据库为json字符串 */
     cJSON *json = cJSON_CreateObject();
     if (!json) return;
-    cJSON_AddNumberToObject(json, "messageId", 1002);
+    cJSON_AddNumberToObject(json, "messageId", 5001);
     cJSON_AddNumberToObject(json, "errorCode", stAdminResponse.iErrorCode);
     cJSON_AddStringToObject(json, "errorDetail", stAdminResponse.sErrorDetail);
 
@@ -597,11 +597,69 @@ static void Add_user_in(cJSON *root, char *pResponse, int iResLen)
 
     cJSON_free(pResJson);
     cJSON_Delete(json);
+}
+
+//用户鉴权业务函数
+static void Certify_user_in(cJSON *root, char *pResponse, int iResLen)
+{
+    //"messageId" : 5002,
+    //"userNum" : "卡号"
+    user_item_info_t userItemInfo;      //创建一个用户信息结构体
+    void **ppvDBHandle = get_handle();  //创建一个数据库句柄
+    char szSqlBuffer[SQL_COMMAND_MAX_SIZE];  //创建一个数据库命令缓冲区
+
+    int iCbRet = -1;                    //定义一个返回值
+    admin_response_t stAdminResponse;   //定义一个返回信息结构体
+    stAdminResponse.iErrorCode = -100;
+    strcpy(stAdminResponse.sErrorDetail,"LIBRARY_UNKNOWN_ERROR");
+
+    //判断json对象是否还有元素
+    if (cJSON_HasObjectItem(root, "userNum")) {
+        //将json中adminId打印（复制）到stAdmin.sAdminId
+        int flag = snprintf(userItemInfo.sUserNum, sizeof(userItemInfo.sUserNum), "%s",
+                            cJSON_GetObjectItem(root, "userNum")->valuestring);
+        if (flag < 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        } else if (flag == 0) {
+            stAdminResponse.iErrorCode = -5;
+            strcpy(stAdminResponse.sErrorDetail, "NO_userNum");
+        }
+    } else {
+        stAdminResponse.iErrorCode = -5;
+        strcpy(stAdminResponse.sErrorDetail, "NO_userNum");
+    }
+
+    printf("sUserNum:%s\n",userItemInfo.sUserNum);
+
+    //组装sql命令
+    if (snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_user where userNum ='%s';",
+                 userItemInfo.sUserNum) <= 0) {
+        stAdminResponse.iErrorCode = -101;
+        strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+    }
+    /*查询是否有相同的用户*/
+    db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
+    //iCbRet为0，即adminId对应的管理员存在 否则返回admin_response_t错误信息
+    if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
+        stAdminResponse.iErrorCode = -3;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
+////////
+    }
+
+
+
+
+
 
 }
 
 
+//删除用户业务函数
+static void Delete_user_in(cJSON *root, char *pResponse, int iResLen)
+{
 
+}
 
 //传入一个json字符串pRequest，并告诉长度iReqLen， 并传回一个回应字符串pResponse及其长度iResLen
 //此函数主要功能为解析 解析json字符串，并根据解析后的结果选择实现相应的业务
@@ -620,14 +678,10 @@ int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLe
     nMessageId = cJSON_GetObjectItem(root, "messageId")->valueint;
     switch (nMessageId) {
         case 1001:
-            printf("1***\n");
             admin_login_in(root, pResponse, iResLen);
-            printf("2***\n");
             break;
         case 1002:
-            printf("3***\n");
             admin_register_in(root, pResponse, iResLen);
-            printf("4***\n");
             break;
         case 2001:
             display_book_in(root, pResponse, iResLen);
@@ -640,6 +694,12 @@ int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLe
             break;
         case 5001:
             Add_user_in(root, pResponse, iResLen);
+            break;
+        case 5002:
+            Certify_user_in(root, pResponse, iResLen);
+            break;
+        case 5003:
+            Delete_user_in(root, pResponse, iResLen);
             break;
         default:
             printf("have no this message:%d\n", nMessageId);
