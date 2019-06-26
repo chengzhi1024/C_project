@@ -647,18 +647,101 @@ static void Certify_user_in(cJSON *root, char *pResponse, int iResLen)
 ////////
     }
 
-
-
-
-
-
 }
 
 
+//删除函数的回调函数
+static int Delete_user_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData)
+{
+    int i;
+    int *pRet = (int *) pvData;
+
+    *pRet = 0;
+    //打印出查询到的userNum的信息
+    printf("ppcArgs:%p, iRow:%d, iCol:%d\n", ppcArgs, iRow, iCol);
+    for (i = 0; i < iCol; i++) {
+        printf("row[%d] col[%d] value [%s]\n", iRow, i, ppcArgs[i]);
+    }
+    return 0;
+}
 //删除用户业务函数
 static void Delete_user_in(cJSON *root, char *pResponse, int iResLen)
 {
+    user_item_info_t userItemInfo;                      //创建一个管理员id
+    void **ppvDBHandle = get_handle();                  //创建一个数据库指针
+    char szSqlBuffer[SQL_COMMAND_MAX_SIZE];             //创建一个数据库命令缓冲区
 
+    int iCbRet = -1;                                    //定义一个返回值
+    admin_response_t stAdminResponse;                   //创建一个返回信息结构体 并赋初值
+    stAdminResponse.iErrorCode = -100;
+    strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+
+    //判断 json对象中是否含有某一个元素  有：1， 无：0
+    if (cJSON_HasObjectItem(root, "userNum")){
+        //将json中userNum打印（复制）到stAdmin.sAdminId
+        int flag = snprintf(userItemInfo.sUserNum, sizeof(userItemInfo.sUserNum), "%s",
+                            cJSON_GetObjectItem(root, "userNum")->valuestring);
+        if (flag < 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        } else if (flag == 0) {
+            stAdminResponse.iErrorCode = -5;
+            strcpy(stAdminResponse.sErrorDetail, "NO_userNum");
+        }
+    } else {
+        stAdminResponse.iErrorCode = -5;
+        strcpy(stAdminResponse.sErrorDetail, "NO_userNum");
+    }
+
+    printf("sUserNum:%s\n", userItemInfo.sUserNum);
+
+    //将查询UserNum信息打印（复制）到字符串szSqlBuffer
+    if (snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_user where userNum =\"%s\";",
+                 userItemInfo.sUserNum) <= 0) {
+        stAdminResponse.iErrorCode = -101;
+        strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+    }
+    /* 查询数据库是否存在UserNum对应的管理员 */
+    db_query(*ppvDBHandle, szSqlBuffer, Delete_user_in_callback, &iCbRet);
+    //iCbRet为0即adminId对应的管理员是存在  否则返回admin_response_t错误信息
+    if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
+        stAdminResponse.iErrorCode = -3;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
+    }
+    if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
+
+        //将删除用户命令打印（复制）到字符串szSqlBuffer
+        if (snprintf(szSqlBuffer, sizeof(szSqlBuffer), "delete from lib_user where userNum = \"%s\";", userItemInfo.sUserNum) <=
+            0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        }
+        /* 删除用户 */
+        iCbRet = db_update(*ppvDBHandle, szSqlBuffer);
+        //如果iCbRet为0，则删除成功 否则返回admin_response_t错误信息
+        if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
+            stAdminResponse.iErrorCode = -12;
+            strcpy(stAdminResponse.sErrorDetail, "DELETE_FAILURED");
+        }
+        //如果iCbRet为0，则删除成功
+        if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
+            stAdminResponse.iErrorCode = 0;
+            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_0K");
+        }
+    }
+
+    /* 组装数据库为json字符串 */
+    cJSON *json = cJSON_CreateObject();
+    if (!json) return;
+    cJSON_AddNumberToObject(json, "messageId", 5003);
+    cJSON_AddNumberToObject(json, "errorCode", stAdminResponse.iErrorCode);
+    cJSON_AddStringToObject(json, "errorDetail", stAdminResponse.sErrorDetail);
+
+    char *pResJson = cJSON_PrintUnformatted(json);
+    snprintf(pResponse, iResLen, "%s", pResJson);
+
+    cJSON_free(pResJson);
+    cJSON_Delete(json);
 }
 
 //传入一个json字符串pRequest，并告诉长度iReqLen， 并传回一个回应字符串pResponse及其长度iResLen
