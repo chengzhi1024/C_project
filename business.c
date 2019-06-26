@@ -35,10 +35,27 @@ int display_book_callback(char **ppcArgs, int iRow, int iCol, void* pvData)
 //显示所有书籍的数目回调函数
 static int total_book_callback(char **ppcArgs,int iRow, int iCol, void* pvData)
 {
-    int *iRet = pvData;
+    int *iRet = (int *)pvData;
     *iRet = atoi(ppcArgs[0]);
 }
 
+static int Search_book_in_callback(char **ppcArgs, int iRow, int iCol, void* pvData)
+{
+    book_item_info_t *pItems = (book_item_info_t *)pvData;
+
+    if(1 != iCol) return -1;
+    snprintf(pItems[iRow-1].sbookId, sizeof(pItems[iRow-1].sbookId),"%s",ppcArgs[0]);
+    snprintf(pItems[iRow-1].sbookName, sizeof(pItems[iRow-1].sbookName),"%s",ppcArgs[1]);
+    snprintf(pItems[iRow-1].sbookAuthor, sizeof(pItems[iRow-1].sbookAuthor),"%s",ppcArgs[2]);
+    pItems[iRow-1].ibookStock = atoi(ppcArgs[3]);
+    pItems[iRow-1].ibookRemain = atoi(ppcArgs[4]);
+    pItems[iRow-1].ibookTimes = atoi(ppcArgs[5]);
+    snprintf(pItems[iRow-1].sbookCategory, sizeof(pItems[iRow-1].sbookCategory),"%s",ppcArgs[6]);
+    snprintf(pItems[iRow-1].sbookPublisher, sizeof(pItems[iRow-1].sbookPublisher),"%s",ppcArgs[7]);
+    snprintf(pItems[iRow-1].sbookPublicationDate, sizeof(pItems[iRow-1].sbookPublicationDate),"%s",ppcArgs[8]);
+
+    return 0;
+}
 /** 登录请求的回调函数
  * 打印每行的数据
  * @param ppcArgs
@@ -92,7 +109,7 @@ static void admin_login_in(cJSON *root, char *pResponse, int iResLen) {
     }
 
 
-    //将查询信息打印（复制）到字符串szSqlBuffer
+    //将sql命令信息打印（复制）到字符串szSqlBuffer
     snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_admin where adminId=\"%s\";",
              stAdmin.sAdminId);
 
@@ -186,7 +203,7 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
         //如果iCbRet为0，则插入成功
         if (0 == iCbRet) {
             stAdminResponse.iErrorCode = 0;
-            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_0k");
+            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_0K");
         }
     }
 
@@ -209,7 +226,7 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
  * @param
  * @param
  */
-static void display_book(cJSON *root, char *pResponse, int iResLen) {
+static void display_book_in(cJSON *root, char *pResponse, int iResLen) {
 // "messageId" : 2001
 // "start" : 2
 // "end" : 10
@@ -229,7 +246,7 @@ static void display_book(cJSON *root, char *pResponse, int iResLen) {
     snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select count(*) from lib_book;");
 //查询数据库，查找所有记录数
     db_query(*ppvDBHandle, szSqlBuffer, total_book_callback, (void *)&iTotal);
-
+    printf("%d\n",iTotal);
 //组装sql查询命令
     snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_book limit %d,%d", iStart, iEnd);
 //查询数据库
@@ -263,6 +280,178 @@ static void display_book(cJSON *root, char *pResponse, int iResLen) {
     free(pItems);
     cJSON_free(pResJson);
     cJSON_Delete(json);
+}
+
+//图书入库函数
+static void Storage_book_in(cJSON *root, char *pResponse, int iResLen)
+{
+    /*
+     * "messageId": 2002
+     * "bookId": "ISBN"
+     * "bookName" : "书名",
+        "bookAuthor" : "作者",
+        "bookAddNumber" : 50,
+        "bookCategory" : "分类",
+        "bookPublisher" : "出版社",
+        "bookPublicationDate" : "2019-06-25 10:27:11"
+     */
+    book_item_info_t bookItemInfo;        //创建一个图书信息结构体
+    void **ppvDBHandle = get_handle();      //创建一个数据库句柄
+    char szSqlBuffer[SQL_COMMAND_MAX_SIZE]; //创建一个数据库命令缓冲区
+    int ibookAddNumber;
+
+    int iCbRet = -1;                        //定义一个返回值
+    admin_response_t stAdminResponse;       //创建一个返回信息结构体 并赋初值
+    stAdminResponse.iErrorCode = -100;
+    strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+
+
+    //判断 json对象中是否含有某一个元素  有：1， 无：0
+    //如果有就赋值给管理员结构体
+    if (cJSON_HasObjectItem(root, "bookId")) {
+        snprintf(bookItemInfo.sbookId, sizeof(bookItemInfo.sbookId), "%s",cJSON_GetObjectItem(root, "bookId")->valuestring);
+    }
+    if (cJSON_HasObjectItem(root, "bookName")) {
+        snprintf(bookItemInfo.sbookName, sizeof(bookItemInfo.sbookName), "%s",cJSON_GetObjectItem(root, "bookName")->valuestring);
+    }
+    if (cJSON_HasObjectItem(root, "bookAuthor")) {
+        snprintf(bookItemInfo.sbookAuthor, sizeof(bookItemInfo.sbookAuthor), "%s",cJSON_GetObjectItem(root, "bookAuthor")->valuestring);
+    }
+    if (cJSON_HasObjectItem(root, "bookAddNumber")) {
+        ibookAddNumber = cJSON_GetObjectItem(root, "bookAddNumber")->valueint;
+    }
+    if (cJSON_HasObjectItem(root, "bookCategory")) {
+        snprintf(bookItemInfo.sbookCategory, sizeof(bookItemInfo.sbookCategory), "%s",cJSON_GetObjectItem(root, "bookCategory")->valuestring);
+    }
+    if (cJSON_HasObjectItem(root, "bookPublisher")) {
+        snprintf(bookItemInfo.sbookPublisher, sizeof(bookItemInfo.sbookPublisher), "%s",cJSON_GetObjectItem(root, "bookPublisher")->valuestring);
+    }
+    if (cJSON_HasObjectItem(root, "bookPublicationDate")) {
+        snprintf(bookItemInfo.sbookPublicationDate, sizeof(bookItemInfo.sbookPublicationDate), "%s",cJSON_GetObjectItem(root, "bookPublicationDate")->valuestring);
+    }
+
+    //打印图书信息结构体数据
+    printf("bookId:%s,bookName:%s,bookAuthor:%s，bookAddNumber:%d,bookCategory:%s,bookPublisher:%s,bookPublicationDate:%s\n",
+           bookItemInfo.sbookId, bookItemInfo.sbookName, bookItemInfo.sbookAuthor,ibookAddNumber,bookItemInfo.sbookCategory,
+           bookItemInfo.sbookPublisher,bookItemInfo.sbookPublicationDate);
+
+    //将sql插入命令打印（复制）到字符串szSqlBuffer
+    snprintf(szSqlBuffer, sizeof(szSqlBuffer), "insert into lib_book values ('%s','%s','%s','%d','%s','%s','%s');",
+             bookItemInfo.sbookId, bookItemInfo.sbookName, bookItemInfo.sbookAuthor,ibookAddNumber,bookItemInfo.sbookCategory,
+             bookItemInfo.sbookPublisher,bookItemInfo.sbookPublicationDate);
+
+    //插入表业务
+
+
+
+    /* 组装数据库为json字符串 */
+    cJSON *json = cJSON_CreateObject();
+    if (!json) return;
+    cJSON_AddNumberToObject(json, "messageId", 2002);
+    cJSON_AddNumberToObject(json, "errorCode", stAdminResponse.iErrorCode);
+    cJSON_AddStringToObject(json, "errorDetail", stAdminResponse.sErrorDetail);
+
+    char *pResJson = cJSON_PrintUnformatted(json);
+    snprintf(pResponse, iResLen, "%s", pResJson);
+
+    cJSON_free(pResJson);
+    cJSON_Delete(json);
+}
+
+//查询图书函数
+static void Search_book_in(cJSON *root, char *pResponse, int iResLen)
+{
+    //"messageId" : 2003,
+    //"bookId" : "",
+    //"type" : 0 // 0代表书号，1代表书名，2代表作者
+    book_item_info_t bookItemInfo;
+    void **ppvDBHandle = get_handle();      //创建一个数据库指针
+    char szSqlBuffer[SQL_COMMAND_MAX_SIZE]; //创建一个数据库命令缓冲区
+    int iType,iTotal;
+
+    admin_response_t stAdminResponse;       //创建一个返回信息结构体 并赋初值
+    stAdminResponse.iErrorCode = -100;
+    strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+
+//解析json对象
+
+    if (cJSON_HasObjectItem(root, "type")) {
+        iType = cJSON_GetObjectItem(root, "type")->valueint;
+    }
+
+//打印数据测试是否解析成功
+    printf("bookId:%s,iType: %d",bookItemInfo.sbookId,iType);
+
+    //组装sql命令，先判断查询类型
+
+    //一共有三种类型，0代表书号，1代表书名，2代表作者
+    if(0 == iType){
+
+        if (cJSON_HasObjectItem(root, "bookSearch")) {
+            snprintf(bookItemInfo.sbookId, sizeof(bookItemInfo.sbookId), "%s",cJSON_GetObjectItem(root, "bookSearch")->valuestring);
+        }
+        //组装sql命令,确定条目总数
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select count(*) from lib_book;");
+        //查询数据库，查找所有记录数
+        db_query(*ppvDBHandle, szSqlBuffer, total_book_callback, (void *)&iTotal);
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_book where bookId = '%s';",bookItemInfo.sbookId);
+    }
+    else if(1 == iType){
+        if (cJSON_HasObjectItem(root, "bookSearch")) {
+            snprintf(bookItemInfo.sbookName, sizeof(bookItemInfo.sbookName), "%s",cJSON_GetObjectItem(root, "bookSearch")->valuestring);
+        }
+        //组装sql命令,确定条目总数
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select count(*) from lib_book;");
+        //查询数据库，查找所有记录数
+        db_query(*ppvDBHandle, szSqlBuffer, total_book_callback, (void *)&iTotal);
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_book where bookName = '%s';",bookItemInfo.sbookName);
+    }
+    else if(2 == iType){
+        if (cJSON_HasObjectItem(root, "bookSearch")) {
+            snprintf(bookItemInfo.sbookAuthor, sizeof(bookItemInfo.sbookAuthor), "%s",cJSON_GetObjectItem(root, "bookSearch")->valuestring);
+        }
+        //组装sql命令,确定条目总数
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select count(*) from lib_book;");
+        //查询数据库，查找所有记录数
+        db_query(*ppvDBHandle, szSqlBuffer, total_book_callback, (void *)&iTotal);
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_book where bookAuthor = '%s';",bookItemInfo.sbookAuthor);
+    } else {
+        stAdminResponse.iErrorCode = -100;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+    }
+    //查询业务部分
+    //查询数据库
+    book_item_info_t *pItems = (book_item_info_t *) malloc(sizeof(book_item_info_t));
+    db_query(*ppvDBHandle, szSqlBuffer, Search_book_in_callback, (void *)pItems);
+
+    /* 组装数据库为json字符串 */
+    cJSON *array = cJSON_CreateArray();
+    cJSON *json = cJSON_CreateObject();
+
+    if (!json || !array) return;
+
+    cJSON *pRowJson = cJSON_CreateObject();
+    cJSON_AddStringToObject(pRowJson, "sbookId", pItems->sbookId);
+    cJSON_AddStringToObject(pRowJson, "sbookName", pItems->sbookName);
+    cJSON_AddStringToObject(pRowJson, "sbookAuthor", pItems->sbookAuthor);
+    cJSON_AddNumberToObject(pRowJson, "ibookStock", pItems->ibookStock);
+    cJSON_AddNumberToObject(pRowJson, "ibookRemain", pItems->ibookRemain);
+    cJSON_AddNumberToObject(pRowJson, "ibookTimes", pItems->ibookTimes);
+    cJSON_AddStringToObject(pRowJson, "sbookCategory", pItems->sbookCategory);
+    cJSON_AddStringToObject(pRowJson, "sbookPublisher", pItems->sbookPublisher);
+    cJSON_AddStringToObject(pRowJson, "sbookPublicationDate", pItems->sbookPublicationDate);
+    cJSON_AddItemToArray(array,pRowJson);
+
+    cJSON_AddNumberToObject(json, "messageId", 2003);
+    cJSON_AddNumberToObject(json, "total", iTotal);
+    cJSON_AddItemToObject(json,"item",array);
+    char *pResJson = cJSON_PrintUnformatted(json);
+
+
+    free(pItems);
+    cJSON_free(pResJson);
+    cJSON_Delete(json);
+
 }
 
 void** get_handle()
@@ -299,7 +488,13 @@ int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLe
             printf("4***\n");
             break;
         case 2001:
-            display_book(root, pResponse, iResLen);
+            display_book_in(root, pResponse, iResLen);
+            break;
+        case 2002:
+            Storage_book_in(root, pResponse, iResLen);
+            break;
+        case 2003:
+            Search_book_in(root, pResponse, iResLen);
             break;
         default:
             printf("have no this message:%d\n", nMessageId);
