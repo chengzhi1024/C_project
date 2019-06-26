@@ -16,7 +16,7 @@ static int admin_login_in_callback(char **ppcArgs, int iRow, int iCol, void *pvD
     for (i = 0; i < iCol; i++) {
         printf("row[%d] col[%d] value [%s]\n", iRow, i, ppcArgs[i]);
     }
-    return *pRet;
+    return 0;
 }
 
 //登录函数
@@ -34,43 +34,73 @@ static void admin_login_in(cJSON *root, char *pResponse, int iResLen) {
     //判断 json对象中是否含有某一个元素  有：1， 无：0
     //如果有就赋值给管理员结构体
     if (cJSON_HasObjectItem(root, "adminId")) {
-        strcpy(stAdmin.sAdminId, cJSON_GetObjectItem(root, "adminId")->valuestring);
+        //将json中adminId打印（复制）到stAdmin.sAdminId
+        int flag = snprintf(stAdmin.sAdminId, sizeof(stAdmin.sAdminId), "%s",
+                            cJSON_GetObjectItem(root, "adminId")->valuestring);
+        if (flag < 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        } else if (flag = 0) {
+            stAdminResponse.iErrorCode = -5;
+            strcpy(stAdminResponse.sErrorDetail, "NO_adminId");
+        }
     }
     if (cJSON_HasObjectItem(root, "adminPasswd")) {
-        strcpy(stAdmin.sAdminPasswd, cJSON_GetObjectItem(root, "adminPasswd")->valuestring);
+        int flag = snprintf(stAdmin.sAdminPasswd, sizeof(stAdmin.sAdminPasswd), "%s",
+                            cJSON_GetObjectItem(root, "adminPasswd")->valuestring);
+        if (flag < 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        } else if (flag = 0) {
+            stAdminResponse.iErrorCode = -6;
+            strcpy(stAdminResponse.sErrorDetail, "NO_adminPasswd");
+        }
     }
     if (cJSON_HasObjectItem(root, "adminName")) {
-        strcpy(stAdmin.sAdminName, cJSON_GetObjectItem(root, "adminName")->valuestring);
+        int flag = snprintf(stAdmin.sAdminName, sizeof(stAdmin.sAdminName), "%s",
+                            cJSON_GetObjectItem(root, "adminName")->valuestring);
+        if (flag < 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        } else if (flag = 0) {
+            stAdminResponse.iErrorCode = -7;
+            strcpy(stAdminResponse.sErrorDetail, "NO_adminName");
+        }
     }
 
     printf("sAdminId:%s,sAdminPasswd:%s,sAdminName:%s\n",
            stAdmin.sAdminId, stAdmin.sAdminPasswd, stAdmin.sAdminName);
 
     //将查询信息打印（复制）到字符串szSqlBuffer
-    snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_admin where adminId=\"%s\";",
-             stAdmin.sAdminId);
-
+    if (snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_admin where adminId=\"%s\";",
+                 stAdmin.sAdminId) <= 0) {
+        stAdminResponse.iErrorCode = -101;
+        strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+    }
     /* 查询数据库是否存在adminId对应的管理员 */
     db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
     //如果admin_login_in_callback返回值iCbRet不为0，即adminId对应的管理员是否存在 否则返回admin_response_t错误信息
-    if (0 != iCbRet) {
+    if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
         stAdminResponse.iErrorCode = -3;
         strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
     }
 
-    if (0 == iCbRet) {
+    if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
         iCbRet = -1;
         //继续生成查询用户的其他信息的命令
-        snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                 "select * from lib_admin where adminId=\"%s\" and adminPasswd=\"%s\";",
-                 stAdmin.sAdminId, stAdmin.sAdminPasswd);
+        if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
+                     "select * from lib_admin where adminId=\"%s\" and adminPasswd=\"%s\";",
+                     stAdmin.sAdminId, stAdmin.sAdminPasswd) <= 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        }
         //继续查询用户的其他信息是否存在 用户名和密码是否正确
         db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, (void *) &iCbRet);
         //再次判断用户名和密码是否正确，否则返回admin_response_t
-        if (0 != iCbRet) {
+        if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
             stAdminResponse.iErrorCode = -1;
             strcpy(stAdminResponse.sErrorDetail, "LIBRARY_PASSWD_ERROR");
-        } else {
+        } else if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
             stAdminResponse.iErrorCode = 0;
             strcpy(stAdminResponse.sErrorDetail, "LIBRARY_OK");
         }
@@ -100,7 +130,7 @@ static int admin_register_in_callback(char **ppcArgs, int iRow, int iCol, void *
     for (i = 0; i < iCol; i++) {
         printf("row[%d] col[%d] value [%s]\n", iRow, i, ppcArgs[i]);
     }
-    return *pRet;
+    return 0;
 }
 
 //注册函数
@@ -118,36 +148,48 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
     //判断 json对象中是否含有某一个元素  有：1， 无：0
     //如果有就赋值给管理员结构体
     if (cJSON_HasObjectItem(root, "adminId")) {
-        strcpy(stAdmin.sAdminId, cJSON_GetObjectItem(root, "adminId")->valuestring);
+        strncpy(stAdmin.sAdminId, cJSON_GetObjectItem(root, "adminId")->valuestring, 64);
+
+    } else {
+        stAdminResponse.iErrorCode = -100;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
     }
+
     if (cJSON_HasObjectItem(root, "adminPasswd")) {
-        strcpy(stAdmin.sAdminPasswd, cJSON_GetObjectItem(root, "adminPasswd")->valuestring);
+        strncpy(stAdmin.sAdminPasswd, cJSON_GetObjectItem(root, "adminPasswd")->valuestring, 64);
+    } else {
+        stAdminResponse.iErrorCode = -100;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
     }
     if (cJSON_HasObjectItem(root, "adminName")) {
         strcpy(stAdmin.sAdminName, cJSON_GetObjectItem(root, "adminName")->valuestring);
+    } else {
+
     }
 
     printf("sAdminId:%s,sAdminPasswd:%s,sAdminName:%s\n",
            stAdmin.sAdminId, stAdmin.sAdminPasswd, stAdmin.sAdminName);
 
     //将查询信息打印（复制）到字符串szSqlBuffer
-    snprintf(szSqlBuffer, sizeof(szSqlBuffer), "insert into lib_admin values ('%s','%s','%s');",
-             stAdmin.sAdminId, stAdmin.sAdminPasswd, stAdmin.sAdminName);
-
-
+    snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_admin where adminId=\"%s\";",
+             stAdmin.sAdminId);
     /* 查询数据库是否存在adminId对应的管理员 */
-    db_query(*ppvDBHandle, szSqlBuffer, admin_login_in_callback, &iCbRet);
+    iCbRet = db_query(*ppvDBHandle, szSqlBuffer, admin_register_in_callback, &iCbRet);
+
     if (0 == iCbRet) {
         stAdminResponse.iErrorCode = -4;
         strcpy(stAdminResponse.sErrorDetail, "ADMIN_ALREADY_EXIST");
     }
     if (0 != iCbRet) {
+        //将查询信息打印（复制）到字符串szSqlBuffer
+        snprintf(szSqlBuffer, sizeof(szSqlBuffer), "insert into lib_admin values ('%s','%s','%s');",
+                 stAdmin.sAdminId, stAdmin.sAdminPasswd, stAdmin.sAdminName);
         /* 插入管理员 */
         iCbRet = db_insert(*ppvDBHandle, szSqlBuffer);
         //如果iCbRet不为0，则插入成功 否则返回admin_response_t错误信息
         if (0 != iCbRet) {
             stAdminResponse.iErrorCode = -3;
-            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+            strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
         }
         //如果iCbRet为0，则插入成功
         if (0 == iCbRet) {
@@ -170,6 +212,8 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
     cJSON_Delete(json);
 }
 
+
+//创建数据库指针
 void **get_handle() {
     static void *pvDBHandle = NULL;
     return &pvDBHandle;
@@ -192,14 +236,10 @@ int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLe
     nMessageId = cJSON_GetObjectItem(root, "messageId")->valueint;
     switch (nMessageId) {
         case 1001:
-            printf("1***\n");
             admin_login_in(root, pResponse, iResLen);
-            printf("2***\n");
             break;
         case 1002:
-            printf("3***\n");
             admin_register_in(root, pResponse, iResLen);
-            printf("4***\n");
             break;
         default:
             printf("have no this message:%d\n", nMessageId);
