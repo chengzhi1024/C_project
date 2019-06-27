@@ -57,8 +57,8 @@ int main() {
 //    cJSON_AddStringToObject(root, "userSex", "");
 //    cJSON_AddStringToObject(root, "userRemark", "");
 #else
-        cJSON_AddNumberToObject(root, "messageId", 5002);
-        cJSON_AddStringToObject(root, "userNum", "11");
+//        cJSON_AddNumberToObject(root, "messageId", 5002);
+//        cJSON_AddStringToObject(root, "userNum", "11");
 
 //    cJSON_AddNumberToObject(root, "messageId", 2002);
 //    cJSON_AddStringToObject(root, "bookId", "123123");
@@ -77,7 +77,8 @@ int main() {
     int iReqLen = 1024;
     char pResponse[1024];
     int iResLen = 1024;
-
+//    int a=atoi(NULL);
+//    printf("%d",a);
     printf("pRequest:%s\n", pRequest);
     exec_business(pRequest, iReqLen, pResponse, iResLen);
     printf("pResponse:%s\n", pResponse);
