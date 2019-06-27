@@ -6,7 +6,7 @@
 #include "cJSON.h"
 
 
-/** 登录查询返回函数 */
+//1.1管理员登录返回函数
 static int admin_login_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
     int *pRet = (int *) pvData;
@@ -20,7 +20,7 @@ static int admin_login_in_callback(char **ppcArgs, int iRow, int iCol, void *pvD
     return 0;
 }
 
-//登录函数
+//1.1管理员登录函数
 static void admin_login_in(cJSON *root, char *pResponse, int iResLen) {
 
     admin_info_t stAdmin;                   //创建一个管理员结构体
@@ -131,7 +131,7 @@ static void admin_login_in(cJSON *root, char *pResponse, int iResLen) {
     cJSON_Delete(json);
 }
 
-/** 注册查询返回函数 */
+//1.2管理员注册返回函数
 static int admin_register_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
     int *pRet = (int *) pvData;
@@ -145,7 +145,7 @@ static int admin_register_in_callback(char **ppcArgs, int iRow, int iCol, void *
     return 0;
 }
 
-//注册函数
+//1.2管理员注册函数
 static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
 
     admin_info_t stAdmin;                   //创建一个管理员结构体
@@ -256,7 +256,7 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
     cJSON_Delete(json);
 }
 
-/** 密码修改查询返回函数 */
+//1.3管理员密码修改返回函数
 static int admin_modifyPassword_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
     int *pRet = (int *) pvData;
@@ -270,7 +270,7 @@ static int admin_modifyPassword_in_callback(char **ppcArgs, int iRow, int iCol, 
     return 0;
 }
 
-//管理员密码修改
+//1.3管理员密码修改函数
 static void admin_modifyPassword_in(cJSON *root, char *pResponse, int iResLen) {
 
     admin_modifypassword_t stAdmin;         //创建一个管理员修改密码结构体
@@ -383,7 +383,7 @@ static void admin_modifyPassword_in(cJSON *root, char *pResponse, int iResLen) {
     cJSON_Delete(json);
 }
 
-/** 管理员注销返回函数 */
+//1.4管理员注销返回函数
 static int admin_logout_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
     int *pRet = (int *) pvData;
@@ -397,7 +397,7 @@ static int admin_logout_in_callback(char **ppcArgs, int iRow, int iCol, void *pv
     return 0;
 }
 
-//管理员注销
+//1.4管理员注销函数
 static void admin_logout_in(cJSON *root, char *pResponse, int iResLen) {
 
     char sAdminId[24];                      //创建一个管理员id
@@ -478,20 +478,8 @@ static void admin_logout_in(cJSON *root, char *pResponse, int iResLen) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-//图书入库函数
-static void Storage_book_in(cJSON *root, char *pResponse, int iResLen)
-{
+//2.2图书入库函数
+static void Storage_book_in(cJSON *root, char *pResponse, int iResLen) {
     /*
      * "messageId": 2002
      * "bookId": "ISBN"
@@ -604,13 +592,15 @@ static void Storage_book_in(cJSON *root, char *pResponse, int iResLen)
     }
     //打印图书信息结构体数据
     printf("bookId:%s,bookName:%s,bookAuthor:%s，bookAddNumber:%d,bookCategory:%s,bookPublisher:%s,bookPublicationDate:%s\n",
-           bookItemInfo.sbookId, bookItemInfo.sbookName, bookItemInfo.sbookAuthor,ibookAddNumber,bookItemInfo.sbookCategory,
-           bookItemInfo.sbookPublisher,bookItemInfo.sbookPublicationDate);
+           bookItemInfo.sbookId, bookItemInfo.sbookName, bookItemInfo.sbookAuthor, ibookAddNumber,
+           bookItemInfo.sbookCategory,
+           bookItemInfo.sbookPublisher, bookItemInfo.sbookPublicationDate);
 
     //将sql插入命令打印（复制）到字符串szSqlBuffer
     snprintf(szSqlBuffer, sizeof(szSqlBuffer), "insert into lib_book values ('%s','%s','%s','%d','%s','%s','%s');",
-             bookItemInfo.sbookId, bookItemInfo.sbookName, bookItemInfo.sbookAuthor,ibookAddNumber,bookItemInfo.sbookCategory,
-             bookItemInfo.sbookPublisher,bookItemInfo.sbookPublicationDate);
+             bookItemInfo.sbookId, bookItemInfo.sbookName, bookItemInfo.sbookAuthor, ibookAddNumber,
+             bookItemInfo.sbookCategory,
+             bookItemInfo.sbookPublisher, bookItemInfo.sbookPublicationDate);
 
     //插入表业务
     /* 插入图书信息 */
@@ -641,9 +631,7 @@ static void Storage_book_in(cJSON *root, char *pResponse, int iResLen)
 }
 
 
-
-
-//添加用户返回函数
+//5.1添加用户返回函数
 static int user_add_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
     int *pRet = (int *) pvData;
@@ -657,7 +645,7 @@ static int user_add_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData
     return 0;
 }
 
-//添加用户函数
+//5.1添加用户函数
 static void user_add_in(cJSON *root, char *pResponse, int iResLen) {
     user_info_t stUser = {""};         //创建一个用户信息结构体
     void **ppvDBHandle = get_handle();          //创建一个数据库指针
@@ -785,7 +773,85 @@ static void user_add_in(cJSON *root, char *pResponse, int iResLen) {
     cJSON_Delete(json);
 }
 
-/** 用户删除返回函数 */
+//5.1添加用户返回函数
+static int user_authentication_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
+    int i;
+    int *pRet = (int *) pvData;
+
+    *pRet = 0;
+    //打印出查询到的信息
+    printf("ppcArgs:%p, iRow:%d, iCol:%d\n", ppcArgs, iRow, iCol);
+    for (i = 1; i < iCol; i++) {
+        printf("row[%d] col[%d] value [%s]\n", iRow, i, ppcArgs[i]);
+    }
+    return 0;
+}
+
+//5.2用户鉴权函数
+static void user_authentication_in(cJSON *root, char *pResponse, int iResLen) {
+
+    char stUserNum[24];;                     //创建一个用户id数组
+    void **ppvDBHandle = get_handle();       //创建一个数据库句柄
+    char szSqlBuffer[SQL_COMMAND_MAX_SIZE];  //创建一个数据库命令缓冲区
+
+    int iCbRet = -1;                         //定义一个返回值
+    admin_response_t stAdminResponse;        //定义一个返回信息结构体
+    stAdminResponse.iErrorCode = -100;
+    strcpy(stAdminResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
+
+    //判断json对象是否有userNum
+    if (cJSON_HasObjectItem(root, "userNum")) {
+        //userNum（复制）到stUserNum
+        int flag = snprintf(stUserNum, sizeof(stUserNum), "%s", cJSON_GetObjectItem(root, "userNum")->valuestring);
+        if (flag < 0) {
+            stAdminResponse.iErrorCode = -101;
+            strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+        } else if (flag == 0) {
+            stAdminResponse.iErrorCode = -13;
+            strcpy(stAdminResponse.sErrorDetail, "NO_userNum");
+        }
+    } else {
+        stAdminResponse.iErrorCode = -13;
+        strcpy(stAdminResponse.sErrorDetail, "NO_userNum");
+    }
+
+    printf("sUserNum:%s\n", stUserNum);
+
+    //组装sql命令
+    if (snprintf(szSqlBuffer, sizeof(szSqlBuffer), "select * from lib_user where userNum ='%s';",
+                 stUserNum) <= 0) {
+        stAdminResponse.iErrorCode = -101;
+        strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
+    }
+    //查询是否有相同的用户
+    db_query(*ppvDBHandle, szSqlBuffer, user_authentication_in_callback, &iCbRet);
+    //iCbRet为0，即adminId对应的管理员存在 否则返回admin_response_t错误信息
+    if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
+        stAdminResponse.iErrorCode = -3;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
+    }
+    if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
+        stAdminResponse.iErrorCode = 0;
+        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_0k");
+    }
+
+    // 组装数据库为json字符串
+    cJSON *json = cJSON_CreateObject();
+    if (!json) return;
+    cJSON_AddNumberToObject(json, "messageId", 5002);
+    cJSON_AddNumberToObject(json, "errorCode", stAdminResponse.iErrorCode);
+    cJSON_AddStringToObject(json, "errorDetail", stAdminResponse.sErrorDetail);
+
+    char *pResJson = cJSON_PrintUnformatted(json);
+    snprintf(pResponse, iResLen, "%s", pResJson);
+
+    cJSON_free(pResJson);
+    cJSON_Delete(json);
+
+}
+
+
+//5.3删除用户返回函数
 static int delete_user_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
     int *pRet = (int *) pvData;
@@ -799,7 +865,7 @@ static int delete_user_in_callback(char **ppcArgs, int iRow, int iCol, void *pvD
     return 0;
 }
 
-//删除用户函数
+//5.3删除用户函数
 static void delete_user_in(cJSON *root, char *pResponse, int iResLen) {
     char stUserNum[24];                                  //创建一个用户id数组
     void **ppvDBHandle = get_handle();                  //创建一个数据库指针
@@ -918,13 +984,29 @@ int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLe
         case 5001:
             user_add_in(root, pResponse, iResLen);
             break;
+        case 5002:
+            user_authentication_in(root, pResponse, iResLen);
+            break;
         case 5003:
             delete_user_in(root, pResponse, iResLen);
             break;
         default:
             printf("have no this message:%d\n", nMessageId);
+            /* 组装数据库为json字符串 */
+            cJSON *json = cJSON_CreateObject();
+            if (!json) return 0;
+            cJSON_AddNumberToObject(json, "messageId", 0000);
+            cJSON_AddNumberToObject(json, "errorCode", -1111);
+            cJSON_AddStringToObject(json, "errorDetail", "NO_MESSAGE");
+
+            char *pResJson = cJSON_PrintUnformatted(json);
+            snprintf(pResponse, iResLen, "%s", pResJson);
+
+            cJSON_free(pResJson);
             break;
     }
+
+
 
     cJSON_Delete(root);
     return 0;

@@ -36,7 +36,8 @@ int main() {
 
     //创建一个cjson结构体指针
     cJSON *root = cJSON_CreateObject();
-    //添加键值队
+#if 0
+        //添加键值队
 //    cJSON_AddNumberToObject(root, "messageId", 1002);
 //    cJSON_AddStringToObject(root, "adminId", "3");
 //    cJSON_AddStringToObject(root, "adminPasswd", "456");
@@ -55,23 +56,21 @@ int main() {
 //    cJSON_AddStringToObject(root, "userName", "yang");
 //    cJSON_AddStringToObject(root, "userSex", "");
 //    cJSON_AddStringToObject(root, "userRemark", "");
+#else
+        cJSON_AddNumberToObject(root, "messageId", 5002);
+        cJSON_AddStringToObject(root, "userNum", "11");
 
-//    cJSON_AddNumberToObject(root, "messageId", 5003);
-//    cJSON_AddStringToObject(root, "userNum", "");
-
-
-
-    cJSON_AddNumberToObject(root, "messageId", 2002);
-    cJSON_AddStringToObject(root, "bookId", "123123");
-    cJSON_AddStringToObject(root, "bookName", "yang");
-    cJSON_AddStringToObject(root, "bookAuthor", "yangv");
-    cJSON_AddNumberToObject(root, "bookAddNumber", 50);
-//    cJSON_AddStringToObject(root, "bookRemain", "");
-//    cJSON_AddStringToObject(root, "bookTimes", "");
-    cJSON_AddStringToObject(root, "bookCategory", "数学");
-    cJSON_AddStringToObject(root, "bookPublisher", "触犯");
-    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
-
+//    cJSON_AddNumberToObject(root, "messageId", 2002);
+//    cJSON_AddStringToObject(root, "bookId", "123123");
+//    cJSON_AddStringToObject(root, "bookName", "yang");
+//    cJSON_AddStringToObject(root, "bookAuthor", "yangv");
+//    cJSON_AddNumberToObject(root, "bookAddNumber", 50);
+////    cJSON_AddStringToObject(root, "bookRemain", "");
+////    cJSON_AddStringToObject(root, "bookTimes", "");
+//    cJSON_AddStringToObject(root, "bookCategory", "数学");
+//    cJSON_AddStringToObject(root, "bookPublisher", "触犯");
+//    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
+#endif
     char *out = cJSON_PrintUnformatted(root);
 
     char *pRequest = out;
