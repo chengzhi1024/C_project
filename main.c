@@ -70,6 +70,11 @@ int main() {
 //    cJSON_AddStringToObject(root, "bookCategory", "数学");
 //    cJSON_AddStringToObject(root, "bookPublisher", "触犯");
 //    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
+
+
+    cJSON_AddNumberToObject(root, "messageId", 3001);
+    cJSON_AddStringToObject(root, "userNum", "2");
+    cJSON_AddStringToObject(root, "bookId", "2001");
 #endif
     char *out = cJSON_PrintUnformatted(root);
 

@@ -40,12 +40,24 @@ typedef struct borrowORreturn_book_info{
 }borrowORreturn_book_info_t;
 //借书还书返回信息结构体
 typedef struct borrowORreturn_response_info{
-    int total;
-    book_info_t* item;
     int iErrorCode;
     char sErrorDetail[24];
+    int total;
+    book_info_t* item;
+
 }borrowORreturn_book_response_t;
 
+
+typedef struct book_borrow_callback_info{
+    char sbookName[50];
+    char sbookId[24];
+    char sbookAuthor[24];
+    char sbookCategory[24];
+    char sbookPublisher[50];
+    char sbookPublicationDate[24];
+    char sborRetDateLimit[24];
+    char sborData[24];
+}book_borrow_callback_info_t;
 
 //第四部分 用户结构体部分
 //用户信息结构体

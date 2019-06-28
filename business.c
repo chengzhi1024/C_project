@@ -73,24 +73,47 @@ static int user_borrow_book_in_callback_remain(char **ppcArgs, int iRow, int iCo
     //打印出查询到的信息
     printf("ppcArgs:%p, iRow:%d, iCol:%d\n", ppcArgs, iRow, iCol);
     printf("row[%d] col[%d] value [%s]\n", iRow, 0, ppcArgs[0]);
+    *pRet = atoi(ppcArgs[0]);
 
-    pRet = ppcArgs[0];
-
-    return pRet;
+    return 0;
 }
-//3.1.2用户借书返回剩余函数
-static int user_borrow_book_in_callback_book_item(char **ppcArgs, int iRow, int iCol, void *pvData) {
-    int i;
-    int *pRet = (int *) pvData;
 
+//3.1.2用户借书返回借书所有信息函数
+static int user_borrow_book_in_callback_book_item(char **ppcArgs, int iRow, int iCol, void *pvData) {
+    book_borrow_callback_info_t *pRet;
+    pRet = (book_borrow_callback_info_t *) pvData + iRow - 1;
+
+    if (8 != iCol) return -1;
+    snprintf(pRet->sbookName, sizeof(pRet->sbookName), "%s", ppcArgs[0]);
+    snprintf(pRet->sbookId, sizeof(pRet->sbookId), "%s", ppcArgs[1]);
+    snprintf(pRet->sbookAuthor, sizeof(pRet->sbookAuthor), "%s", ppcArgs[2]);
+    snprintf(pRet->sbookCategory, sizeof(pRet->sbookCategory), "%s", ppcArgs[3]);
+    snprintf(pRet->sbookPublisher, sizeof(pRet->sbookPublisher), "%s", ppcArgs[4]);
+    snprintf(pRet->sbookPublicationDate, sizeof(pRet->sbookPublicationDate), "%s", ppcArgs[5]);
+    snprintf(pRet->sborRetDateLimit, sizeof(pRet->sborRetDateLimit), "%s", ppcArgs[6]);
+    snprintf(pRet->sborData, sizeof(pRet->sborData), "%s", ppcArgs[7]);
+
+    //打印出查询到的信息
+    printf("%s ", pRet->sbookName);
+//    printf("%s ",pRet->sbookId);
+//    printf("%s ",pRet->sbookAuthor);
+//    printf("%s ",pRet->sbookCategory);
+//    printf("%s ",pRet->sbookPublisher);
+//    printf("%s ",pRet->sbookPublicationDate);
+//    printf("%s ",pRet->sborRetDateLimit);
+//    printf("%s ",pRet->sborData);
+//    printf("123\n");
+
+    return 0;
+}
+
+//3.1.3用户借书返回借书数量函数
+static int user_borrow_book_in_callback_total(char **ppcArgs, int iRow, int iCol, void *pvData) {
+    int *pRet = (int *) pvData;
     *pRet = 0;
     //打印出查询到的信息
-    printf("ppcArgs:%p, iRow:%d, iCol:%d\n", ppcArgs, iRow, iCol);
-    printf("row[%d] col[%d] value [%s]\n", iRow, 0, ppcArgs[0]);
-
-    pRet = ppcArgs[0];
-
-    return pRet;
+    *pRet = atoi(ppcArgs[0]);
+    return 0;
 }
 
 
@@ -111,9 +134,9 @@ static int user_add_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData
 //5.2用户鉴权返回函数
 static int user_authentication_in_callback(char **ppcArgs, int iRow, int iCol, void *pvData) {
     int i;
-    int *pRet = (int *) pvData;
+//    int *pRet = (int *) pvData;
+//    *pRet = 0;
 
-    *pRet = 0;
     //打印出查询到的信息
     printf("ppcArgs:%p, iRow:%d, iCol:%d\n", ppcArgs, iRow, iCol);
     for (i = 1; i < iCol; i++) {
@@ -318,7 +341,7 @@ static void admin_register_in(cJSON *root, char *pResponse, int iResLen) {
         strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
     }
     /* 查询数据库是否存在adminId对应的管理员 */
-    db_query(*ppvDBHandle, szSqlBuffer, admin_register_in_callback, &iCbRet);
+    db_query(*ppvDBHandle, szSqlBuffer, user_borrow_book_in_callback_total, &iCbRet);
     //iCbRet为0即adminId对应的管理员是存在 返回admin_response_t错误信息 否则添加一个管理员
     if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
         stAdminResponse.iErrorCode = -4;
@@ -714,8 +737,9 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
     borrowORreturn_book_info_t stBorrowBook; //创建一个借书信息结构体
     void **ppvDBHandle = get_handle();      //创建一个数据库指针
     char szSqlBuffer[SQL_COMMAND_MAX_SIZE]; //创建一个数据库命令缓冲区
-
-    int iCbRet = -1;                        //定义一个返回值
+    int total = 0;                           //定义一个返回书籍条目数量
+    book_borrow_callback_info_t *pCbRet;     //定义一个返回书籍条目结构体指针
+    int iCbRet = -1;                         //定义一个返回值
     borrowORreturn_book_response_t stBorrowBookResponse;       //创建一个返回信息结构体 并赋初值
     stBorrowBookResponse.iErrorCode = -100;
     strcpy(stBorrowBookResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
@@ -737,9 +761,9 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
         stBorrowBookResponse.iErrorCode = -13;
         strcpy(stBorrowBookResponse.sErrorDetail, "NO_userNum");
     }
-    if (cJSON_HasObjectItem(root, "sbookId")) {
+    if (cJSON_HasObjectItem(root, "bookId")) {
         int flag = snprintf(stBorrowBook.sbookId, sizeof(stBorrowBook.sbookId), "%s",
-                            cJSON_GetObjectItem(root, "sbookId")->valuestring);
+                            cJSON_GetObjectItem(root, "bookId")->valuestring);
         if (flag < 0) {
             stBorrowBookResponse.iErrorCode = -101;
             strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
@@ -776,6 +800,7 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
         }
         //查询数据库是否存在usertNum对应的用户
         int flag = db_query(*ppvDBHandle, szSqlBuffer, user_authentication_in_callback, &iCbRet);
+        printf("iCbRet:%d\n", iCbRet);
         //iCbRet为0，即UserNum对应的用户存在 否则返回borrowORreturn_book_response_t错误信息
         if (0 != flag && -100 == stBorrowBookResponse.iErrorCode) {
             stBorrowBookResponse.iErrorCode = -3;
@@ -788,8 +813,8 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
                 iCbRet = -1;
                 //将修改信息打印（复制）到字符串szSqlBuffer
                 if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                             "update lib_book set bookRemain = bookRemain - 1 where bookId = \"%s\";",
-                             stBorrowBook.sUserNum) <= 0) {
+                             "update lib_book set lib_book.bookRemain = lib_book.bookRemain - 1 where bookId = \"%s\";",
+                             stBorrowBook.sbookId) <= 0) {
                     stBorrowBookResponse.iErrorCode = -101;
                     strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
                 }
@@ -800,27 +825,45 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
                     strcpy(stBorrowBookResponse.sErrorDetail, "UPDATE_FAILURED");
                 }
                 if (0 == iCbRet && -100 == stBorrowBookResponse.iErrorCode) {
-
                     //插入一条借书信息
-                    insert into lib_book_borrow (borId,userId,bookId,borStatus,borDate,borRetDateLimit,retDate) values ('9','3','2004','1','2015-09-10 00:00:00','2015-12-10 00:00:00','2015-10-25 00:00:00');
                     iCbRet = -1;
+                    //得到当前时间和归还时间
+                    time_t timep;
+                    struct tm *p;
+                    time(&timep);
+                    p = gmtime(&timep);
+                    char curtime[24];
+                    char rettime[24];
+                    if (snprintf(curtime, sizeof(curtime), "%.4d-%.2d-%.2d %.2d:%.2d:%.2d", 1900 + p->tm_year,
+                                 1 + p->tm_mon, p->tm_mday, 8 + p->tm_hour, p->tm_min, p->tm_sec) <= 0) {
+                        stBorrowBookResponse.iErrorCode = -101;
+                        strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
+                    }
+                    if (snprintf(rettime, sizeof(rettime), "%.4d-%.2d-%.2d %.2d:%.2d:%.2d", 1900 + p->tm_year,
+                                 3 + p->tm_mon, p->tm_mday, 8 + p->tm_hour, p->tm_min, p->tm_sec) <= 0) {
+                        stBorrowBookResponse.iErrorCode = -101;
+                        strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
+                    }
+//                    printf("time:%s\n",curtime);
+//                    printf("time:%s\n",rettime);
+
                     //将修改信息打印（复制）到字符串szSqlBuffer
                     if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                                 "insert into lib_book_borrow (borId,userId,bookId,borStatus,borDate,borRetDateLimit) values (\"%s\",\"%s\",\"%s\",'1',\"%s\",\"%s\");",
-                                 stBorrowBook.sUserNum,stBorrowBook.sUserNum,stBorrowBook.sbookId,   gettimeofday(),stBorrowBook.sUserNum) <= 0) {
+                                 "insert into lib_book_borrow (userId,bookId,borStatus,borDate,borRetDateLimit) values ((select lib_user.userId from lib_user where userNum = \"%s\"),\"%s\",'1',\"%s\",\"%s\");",
+                                 stBorrowBook.sUserNum, stBorrowBook.sbookId, curtime, rettime) <= 0) {
                         stBorrowBookResponse.iErrorCode = -101;
                         strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
                     }
                     //插入借阅信息
                     iCbRet = db_insert(*ppvDBHandle, szSqlBuffer);
-                    if(0 != iCbRet && -100 == stBorrowBookResponse.iErrorCode){
+                    if (0 != iCbRet && -100 == stBorrowBookResponse.iErrorCode) {
                         stBorrowBookResponse.iErrorCode = -8;
                         strcpy(stBorrowBookResponse.sErrorDetail, "INSERT_FAILURED");
                     }
-                   if(0 == iCbRet && -100 == stBorrowBookResponse.iErrorCode){
-                       stBorrowBookResponse.iErrorCode = 0;
-                       strcpy(stBorrowBookResponse.sErrorDetail, "LIBRARY_0k");
-                   }
+                    if (0 == iCbRet && -100 == stBorrowBookResponse.iErrorCode) {
+                        stBorrowBookResponse.iErrorCode = 0;
+                        strcpy(stBorrowBookResponse.sErrorDetail, "LIBRARY_0k");
+                    }
                 }
             }
             //剩余不足 不能借书
@@ -829,41 +872,80 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
                 strcpy(stBorrowBookResponse.sErrorDetail, "BOOK_BORROW_OUT");
             }
         }
-        //借书完成 打印当前用户的借阅信息
+        //查询当前用户是否存在借阅信息
+        flag = -1;
         //将查询信息打印（复制）到字符串szSqlBuffer
-        flag=-1;
         if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                     "select bookName,userNum,bookAuthor,bookCategory,bookPublisher,bookPublicationDate,borRetDateLimit,borDate from (lib_book_borrow left join lib_book on lib_book_borrow.bookId = lib_book.bookId) left join lib_user on lib_book_borrow.userId = lib_user.userId where  lib_user.userNum =\"%s\";",
+                     "select count(*) from lib_book_borrow where userId in (select userId from lib_user where userNum = \"%s\");",
                      stBorrowBook.sUserNum) <= 0) {
             stBorrowBookResponse.iErrorCode = -101;
             strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
         }
         //查询数据库是否存在usertNum对应的用户借阅信息
-        flag = db_query(*ppvDBHandle, szSqlBuffer, user_borrow_book_in_callback_book_item, &iCbRet);
-        if (0 != flag && -100 == stBorrowBookResponse.iErrorCode) {
+        flag = db_query(*ppvDBHandle, szSqlBuffer, user_borrow_book_in_callback_total, &iCbRet);
+        if(0 != flag && -100 == stBorrowBookResponse.iErrorCode){
             stBorrowBookResponse.iErrorCode = -24;
             strcpy(stBorrowBookResponse.sErrorDetail, "QUERY_FAILURED");
+        } else{
+            total = iCbRet;
+            if(total==0){
+                stBorrowBookResponse.iErrorCode = -25;
+                strcpy(stBorrowBookResponse.sErrorDetail, "NO_BORROW_INFO");
+            }
+            if(total>0){
+                //查询借书信息
+                //定义一个返回书籍条目信息结构体
+                book_borrow_callback_info_t sCbRet[total];
+                pCbRet = sCbRet;
+                //借书完成 打印当前用户的借阅信息
+                //将查询信息打印（复制）到字符串szSqlBuffer
+                flag = -1;
+                if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
+                             "select bookName,userNum,bookAuthor,bookCategory,bookPublisher,bookPublicationDate,borRetDateLimit,borDate from (lib_book_borrow left join lib_book on lib_book_borrow.bookId = lib_book.bookId) left join lib_user on lib_book_borrow.userId = lib_user.userId where  lib_user.userNum =\"%s\";",
+                             stBorrowBook.sUserNum) <= 0) {
+                    stBorrowBookResponse.iErrorCode = -101;
+                    strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
+                }
+                //查询数据库是否存在usertNum对应的用户借阅信息
+                flag = db_query(*ppvDBHandle, szSqlBuffer, user_borrow_book_in_callback_book_item, sCbRet);
+                if (0 != flag && -100 == stBorrowBookResponse.iErrorCode) {
+                    stBorrowBookResponse.iErrorCode = -24;
+                    strcpy(stBorrowBookResponse.sErrorDetail, "QUERY_FAILURED");
+                }
+            }
         }
     }
 
     /* 组装数据库为json字符串 */
     cJSON *json = cJSON_CreateObject();
     if (!json) return;
+    cJSON *bookarr = cJSON_CreateArray();
+    if (!bookarr) return;
     cJSON_AddNumberToObject(json, "messageId", 3001);
-    cJSON_AddNumberToObject(json, "total", 20);
-    cJSON_AddNumberToObject(json, "item", 2222);
-
-
-//    borrowORreturn_book_info_t
-
     cJSON_AddNumberToObject(json, "errorCode", stBorrowBookResponse.iErrorCode);
     cJSON_AddStringToObject(json, "errorDetail", stBorrowBookResponse.sErrorDetail);
+    cJSON_AddNumberToObject(json, "total", total);
 
-    char *pResJson = cJSON_PrintUnformatted(json);
+    for (int i = 0; i < total; i++) {
+        cJSON *bookitem = cJSON_CreateObject();
+        cJSON_AddStringToObject(bookitem, "bookName", (pCbRet + i)->sbookName);
+        cJSON_AddStringToObject(bookitem, "bookNum", (pCbRet + i)->sbookId);
+        cJSON_AddStringToObject(bookitem, "bookAuthor", (pCbRet + i)->sbookAuthor);
+        cJSON_AddStringToObject(bookitem, "bookCategory", (pCbRet + i)->sbookCategory);
+        cJSON_AddStringToObject(bookitem, "bookPublisher", (pCbRet + i)->sbookPublisher);
+        cJSON_AddStringToObject(bookitem, "bookPublicationDate", (pCbRet + i)->sbookPublicationDate);
+        cJSON_AddStringToObject(bookitem, "borRetDateLimit", (pCbRet + i)->sborRetDateLimit);
+        cJSON_AddStringToObject(bookitem, "borDate", (pCbRet + i)->sborData);
+        cJSON_AddItemToArray(bookarr, bookitem);
+    }
+    cJSON_AddItemToObject(json, "item", bookarr);
+
+    char *pResJson = cJSON_Print(json);
     snprintf(pResponse, iResLen, "%s", pResJson);
 
     cJSON_free(pResJson);
     cJSON_Delete(json);
+
 }
 
 
@@ -1032,13 +1114,13 @@ static void user_authentication_in(cJSON *root, char *pResponse, int iResLen) {
         strcpy(stAdminResponse.sErrorDetail, "snprintf_ERROR");
     }
     //查询是否有相同的用户
-    db_query(*ppvDBHandle, szSqlBuffer, user_authentication_in_callback, &iCbRet);
+    int flag = db_query(*ppvDBHandle, szSqlBuffer, user_authentication_in_callback, &iCbRet);
     //iCbRet为0，即adminId对应的管理员存在 否则返回admin_response_t错误信息
-    if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
+    if (0 != flag && -100 == stAdminResponse.iErrorCode) {
         stAdminResponse.iErrorCode = -3;
         strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
     }
-    if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
+    if (0 == flag && -100 == stAdminResponse.iErrorCode) {
         stAdminResponse.iErrorCode = 0;
         strcpy(stAdminResponse.sErrorDetail, "LIBRARY_0k");
     }
@@ -1173,10 +1255,13 @@ int exec_business(const char *pRequest, int iReqLen, char *pResponse, int iResLe
             admin_logout_in(root, pResponse, iResLen);
             break;
         case 2002:
-            Storage_book_in(root, pResponse, iResLen);
+//            Storage_book_in(root, pResponse, iResLen);
             break;
         case 5001:
             user_add_in(root, pResponse, iResLen);
+            break;
+        case 3001:
+            user_borrow_book_in(root, pResponse, iResLen);
             break;
         case 5002:
             user_authentication_in(root, pResponse, iResLen);
