@@ -24,7 +24,7 @@ int main() {
     printf("db_init:%s\n", db_get_error(*ppvDBHandle));
 
     /* 连接数据库 */
-    iRet = db_connect(*ppvDBHandle, "10.2.8.114", 3306, "root", "123456dsa", "library_system");
+    iRet = db_connect(*ppvDBHandle, "192.168.3.50", 3306, "root", "123456dsa", "library_system");
 //    printf("db_connect iRet:%d\n", iRet);
 //    printf("%s\n", db_get_error(*ppvDBHandle));
     if (iRet) return iRet;
@@ -72,16 +72,16 @@ int main() {
 //    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
 
 
-    cJSON_AddNumberToObject(root, "messageId", 3001);
+    cJSON_AddNumberToObject(root, "messageId", 4001);
     cJSON_AddStringToObject(root, "userNum", "2");
     cJSON_AddStringToObject(root, "bookId", "2001");
 #endif
     char *out = cJSON_PrintUnformatted(root);
 
     char *pRequest = out;
-    int iReqLen = 1024;
-    char pResponse[1024];
-    int iResLen = 1024;
+    int iReqLen = 10240;
+    char pResponse[10240];
+    int iResLen = 10240;
 //    int a=atoi(NULL);
 //    printf("%d",a);
     printf("pRequest:%s\n", pRequest);
