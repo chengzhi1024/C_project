@@ -30,6 +30,23 @@ typedef struct book_info{
     char sbookPublisher[50];
     char sbookPublicationDate[24];
 }book_info_t;
+//图书信息显示位置结构体
+typedef struct book_display_position{
+    int iStart;
+    int iEnd;
+}book_display_position_t;
+//图书搜索信息结构体
+typedef struct book_search_info{
+    char sBookSearch[24];
+    int iType;   // 0代表书号，1代表书名，2代表作者
+}book_search_info_t;
+//图书显示返回错误信息结构体
+typedef struct book_display_response_info{
+    int iErrorCode;
+    char sErrorDetail[24];
+    int itotal;
+//    book_info_t* item;
+}book_display_response_t;
 
 
 //第三部分 借书还书结构体部分
@@ -38,11 +55,11 @@ typedef struct borrowORreturn_book_info{
     char sUserNum[24];
     char sbookId[24];
 }borrowORreturn_book_info_t;
-//借书还书返回信息结构体
+//借书还书返回错误信息结构体
 typedef struct borrowORreturn_response_info{
     int iErrorCode;
     char sErrorDetail[24];
-    int total;
+    int itotal;
 //    book_info_t* item;
 }borrowORreturn_book_response_t;
 //借书返回信息结构体
@@ -68,6 +85,7 @@ typedef struct book_retrun_callback_info{
     char sborData[24];
     char sretDate[24];
 }book_retrun_callback_info_t;
+
 
 //第四部分 用户结构体部分
 //用户信息结构体

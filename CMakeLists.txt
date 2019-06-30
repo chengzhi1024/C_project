@@ -5,6 +5,6 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(Cjson/)
 include_directories(db_mysql/)
-
-add_executable(C_project main.c business.c Cjson/cJSON.c Cjson/cJSON.h temp.c db_mysql/db_mysql.c)
+#include_directories(/usr/)
+add_executable(C_project main.c business.c Cjson/cJSON.c Cjson/cJSON.h db_mysql/db_mysql.c)
 target_link_libraries(C_project libmysqlclient.so)

@@ -5,24 +5,14 @@
 #include "Cjson/cJSON.h"
 #include "db_mysql.h"
 
-struct request {
-    int messageId;
-    char adminId[48];
-    char adminPasswd[48];
-    char adminName[48];
-} request;
-
 int main() {
-
     int iRet;
     /* 获取数据库操作句柄 */
     void **ppvDBHandle = get_handle();
-
     /* 初始化数据库 */
     iRet = db_init(ppvDBHandle);
     if (iRet) return iRet;
     printf("db_init:%s\n", db_get_error(*ppvDBHandle));
-
     /* 连接数据库 */
     iRet = db_connect(*ppvDBHandle, "192.168.3.50", 3306, "root", "123456dsa", "library_system");
 //    printf("db_connect iRet:%d\n", iRet);
@@ -37,7 +27,7 @@ int main() {
     //创建一个cjson结构体指针
     cJSON *root = cJSON_CreateObject();
 #if 0
-        //添加键值队
+    //添加键值队
 //    cJSON_AddNumberToObject(root, "messageId", 1002);
 //    cJSON_AddStringToObject(root, "adminId", "3");
 //    cJSON_AddStringToObject(root, "adminPasswd", "456");
@@ -61,7 +51,7 @@ int main() {
 //        cJSON_AddStringToObject(root, "userNum", "11");
 
 //    cJSON_AddNumberToObject(root, "messageId", 2002);
-//    cJSON_AddStringToObject(root, "bookId", "123123");
+//    cJSON_AddStringToObject(root, "bookId", "1234");
 //    cJSON_AddStringToObject(root, "bookName", "yang");
 //    cJSON_AddStringToObject(root, "bookAuthor", "yangv");
 //    cJSON_AddNumberToObject(root, "bookAddNumber", 50);
@@ -72,9 +62,18 @@ int main() {
 //    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
 
 
-    cJSON_AddNumberToObject(root, "messageId", 4001);
-    cJSON_AddStringToObject(root, "userNum", "2");
-    cJSON_AddStringToObject(root, "bookId", "2001");
+//    cJSON_AddNumberToObject(root, "messageId", 4001);
+//    cJSON_AddStringToObject(root, "userNum", "2");
+//    cJSON_AddStringToObject(root, "bookId", "2001");
+
+//    cJSON_AddNumberToObject(root, "messageId", 2001);
+//    cJSON_AddNumberToObject(root, "start", 2);
+//    cJSON_AddNumberToObject(root, "end", 5);
+
+    cJSON_AddNumberToObject(root, "messageId", 2003);
+    cJSON_AddStringToObject(root, "bookSearch", "yang");
+    cJSON_AddNumberToObject(root, "type", 1);
+
 #endif
     char *out = cJSON_PrintUnformatted(root);
 
@@ -82,8 +81,7 @@ int main() {
     int iReqLen = 10240;
     char pResponse[10240];
     int iResLen = 10240;
-//    int a=atoi(NULL);
-//    printf("%d",a);
+
     printf("pRequest:%s\n", pRequest);
     exec_business(pRequest, iReqLen, pResponse, iResLen);
     printf("pResponse:%s\n", pResponse);
