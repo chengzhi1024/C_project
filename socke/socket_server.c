@@ -12,7 +12,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <cJSON.h>
-#include <db_interface.h>
+#include <db_mysql.h>
 #include <socket_server.h>
 
 int socket_init(short nPort) {
@@ -54,8 +54,8 @@ int socket_accept(int iSockFd, recv_handle_t callback) {
     int iConnFd;
     socklen_t stAddrLen;
     struct sockaddr_in client;
-    char sRecvbuf[1024];
-    char sSendBuf[1024];
+    char sRecvbuf[10240];
+    char sSendBuf[10240];
 
     stAddrLen = sizeof(client);
     while (1) {
