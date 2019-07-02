@@ -214,12 +214,13 @@ static int user_return_book_in_callback_ishave(char **ppcArgs, int iRow, int iCo
 }
 
 //4.1.2用户还书返回借阅状态函数
-static int user_return_book_in_callback_borrow_status(char **ppcArgs, int iRow, int iCol, void *pvData) {
-    int *pRet = (int *) pvData;
-    *pRet = 0;
-    if (1 == atoi(ppcArgs[0])) {
-        *pRet = 1;
-    }
+static int user_return_book_in_callback_borrow_redate(char **ppcArgs, int iRow, int iCol, void *pvData) {
+    char *pRet = (char *) pvData;
+    snprintf(pRet, 24, "%s", ppcArgs[0]);
+//    *pRet = 0;
+//    if (1 == atoi(ppcArgs[0])) {
+//        *pRet = 1;
+//    }
     return 0;
 }
 
@@ -599,7 +600,7 @@ static void admin_modifyPassword_in(cJSON *root, char *pResponse, int iResLen) {
     //iCbRet为0即adminId对应的管理员是存在  否则返回admin_response_t错误信息
     if (0 != iCbRet && -100 == stAdminResponse.iErrorCode) {
         stAdminResponse.iErrorCode = -3;
-        strcpy(stAdminResponse.sErrorDetail, "LIBRARY_NO_USER");
+        strcpy(stAdminResponse.sErrorDetail, "NO_USER_OR_PASSWD_ERROR");
     }
     if (0 == iCbRet && -100 == stAdminResponse.iErrorCode) {
         iCbRet = -1;
@@ -768,11 +769,11 @@ static void display_book_in(cJSON *root, char *pResponse, int iResLen) {
         } else {
             if (stBookDisplayResponse.itotal >= stBookDisplay.iEnd) {
                 number = stBookDisplay.iEnd - stBookDisplay.iStart;
-            } else{
-                if(stBookDisplayResponse.itotal<=stBookDisplay.iStart){
-                    number=0;
-                } else{
-                    number=stBookDisplayResponse.itotal-stBookDisplay.iStart;
+            } else {
+                if (stBookDisplayResponse.itotal <= stBookDisplay.iStart) {
+                    number = 0;
+                } else {
+                    number = stBookDisplayResponse.itotal - stBookDisplay.iStart;
                 }
             }
         }
@@ -888,10 +889,16 @@ static void book_storage_in(cJSON *root, char *pResponse, int iResLen) {
     }
     if (cJSON_HasObjectItem(root, "bookAddNumber")) {
         stBookInfo.ibookStock = cJSON_GetObjectItem(root, "bookAddNumber")->valueint;
+        if (stBookInfo.ibookStock < 0) {
+            stAdminResponse.iErrorCode = -35;
+            strcpy(stAdminResponse.sErrorDetail, "NUMBER_EORROR");
+        }
     } else {
         stAdminResponse.iErrorCode = -29;
         strcpy(stAdminResponse.sErrorDetail, "NO_bookAddNumber");
     }
+
+
     if (cJSON_HasObjectItem(root, "bookCategory")) {
         int flag = snprintf(stBookInfo.sbookCategory, sizeof(stBookInfo.sbookCategory), "%s",
                             cJSON_GetObjectItem(root, "bookCategory")->valuestring);
@@ -1294,7 +1301,7 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
                     iCbRet = -1;
                     //将修改信息打印（复制）到字符串szSqlBuffer
                     if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                                 "update lib_book set lib_book.bookRemain = lib_book.bookRemain - 1 where bookId = \"%s\";",
+                                 "update lib_book set lib_book.bookRemain = lib_book.bookRemain - 1 ,lib_book.bookTimes = lib_book.bookTimes + 1 where bookId = \"%s\";",
                                  stBorrowBook.sbookId) <= 0) {
                         stBorrowBookResponse.iErrorCode = -101;
                         strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
@@ -1330,7 +1337,7 @@ static void user_borrow_book_in(cJSON *root, char *pResponse, int iResLen) {
 
                         //将修改信息打印（复制）到字符串szSqlBuffer
                         if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                                     "insert into lib_book_borrow (userId,bookId,borStatus,borDate,borRetDateLimit) values ((select lib_user.userId from lib_user where userNum = \"%s\"),\"%s\",'1',\"%s\",\"%s\");",
+                                     "insert into lib_book_borrow (userId,bookId,borStatus,borDate,borRetDateLimit,retDate) values ((select lib_user.userId from lib_user where userNum = \"%s\"),\"%s\",'1',\"%s\",\"%s\",NULL);",
                                      stBorrowBook.sUserNum, stBorrowBook.sbookId, curtime, rettime) <= 0) {
                             stBorrowBookResponse.iErrorCode = -101;
                             strcpy(stBorrowBookResponse.sErrorDetail, "snprintf_ERROR");
@@ -1602,6 +1609,8 @@ static void user_return_book_in(cJSON *root, char *pResponse, int iResLen) {
     book_retrun_callback_info_t *pCbRet = NULL;     //定义一个返回书籍条目结构体指针
     int iCbRet = -1;                         //定义一个返回值
     borrowORreturn_book_response_t stReturnBookResponse;       //创建一个返回信息结构体 并赋初值
+    char sRetborDate[24] = {};                                      //创建一个返回时间数组
+    char *pRetborDate = sRetborDate;                                      //创建一个返回时间数组
     stReturnBookResponse.iErrorCode = -100;
     strcpy(stReturnBookResponse.sErrorDetail, "LIBRARY_UNKNOWN_ERROR");
     stReturnBookResponse.itotal = 0;               //初始化返回书籍条目数量
@@ -1674,25 +1683,24 @@ static void user_return_book_in(cJSON *root, char *pResponse, int iResLen) {
             if (0 == iCBAuthentication && -100 == stReturnBookResponse.iErrorCode) {
                 //查询用户是否正在借阅这本书
                 flag = -1;
-                iCbRet = -1;
                 if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                             "select lib_book_borrow.borStatus from lib_book_borrow where bookId = \"%s\" and userId= (select lib_user.userId from lib_user where lib_user.userNum = \"%s\");",
+                             "select lib_book_borrow.borDate from lib_book_borrow where bookId = \"%s\" and userId= (select lib_user.userId from lib_user where lib_user.userNum = \"%s\") and borStatus=1 limit 0,1;",
                              stReturnBook.sbookId, stReturnBook.sUserNum) <= 0) {
                     stReturnBookResponse.iErrorCode = -101;
                     strcpy(stReturnBookResponse.sErrorDetail, "snprintf_ERROR");
                 }
                 //查询数据库是否存在usertNum对应的用户
-                flag = db_query(*ppvDBHandle, szSqlBuffer, user_return_book_in_callback_borrow_status, &iCbRet);
+                flag = db_query(*ppvDBHandle, szSqlBuffer, user_return_book_in_callback_borrow_redate, sRetborDate);
                 if (0 != flag && -100 == stReturnBookResponse.iErrorCode) {
                     stReturnBookResponse.iErrorCode = -27;
                     strcpy(stReturnBookResponse.sErrorDetail, "SELECT_FAILURED");
                 }
                 if (0 == flag && -100 == stReturnBookResponse.iErrorCode) {
-                    if (0 == iCbRet) {
+                    if (strcmp("",sRetborDate)==0) {
                         stReturnBookResponse.iErrorCode = -26;
                         strcpy(stReturnBookResponse.sErrorDetail, "NO_BORROW_THIS_BOOK");
                     }
-                    if (1 == iCbRet) {
+                    if (strcmp("",sRetborDate)!=0) {
                         //修改这条借书信息和修改剩余
                         iCbRet = -1;
                         //得到当前归还时间
@@ -1710,8 +1718,8 @@ static void user_return_book_in(cJSON *root, char *pResponse, int iResLen) {
                         printf("time:%s\n", curRetTime);
                         //将修改信息打印（复制）到字符串szSqlBuffer
                         if (snprintf(szSqlBuffer, sizeof(szSqlBuffer),
-                                     "update lib_book_borrow, lib_book set lib_book_borrow.retDate = \"%s\",lib_book_borrow.borStatus =0 ,lib_book.bookRemain = lib_book.bookRemain + 1 where lib_book.bookId = \"%s\" and userId= (select lib_user.userId from lib_user where lib_user.userNum = \"%s\");",
-                                     curRetTime, stReturnBook.sbookId, stReturnBook.sUserNum) <= 0) {
+                                     "update lib_book_borrow, lib_book set lib_book_borrow.retDate = \"%s\",lib_book_borrow.borStatus =0 ,lib_book.bookRemain = lib_book.bookRemain + 1 where lib_book.bookId = \"%s\" and userId= (select lib_user.userId from lib_user where lib_user.userNum = \"%s\") and borDate=\"%s\";",
+                                     curRetTime, stReturnBook.sbookId, stReturnBook.sUserNum, sRetborDate) <= 0) {
                             stReturnBookResponse.iErrorCode = -101;
                             strcpy(stReturnBookResponse.sErrorDetail, "snprintf_ERROR");
                         }
@@ -1948,8 +1956,8 @@ static void user_search_return_info_book_in(cJSON *root, char *pResponse, int iR
                                 "bookPublisher", (pCbRet + i)->sbookPublisher);
         cJSON_AddStringToObject(bookitem,
                                 "bookPublicationDate", (pCbRet + i)->sbookPublicationDate);
-        cJSON_AddStringToObject(bookitem,
-                                "borRetDateLimit", (pCbRet + i)->sborRetDateLimit);
+//        cJSON_AddStringToObject(bookitem,"borRetDateLimit", (pCbRet + i)->sborRetDateLimit);
+        cJSON_AddStringToObject(bookitem, "borDate", (pCbRet + i)->sborRetDateLimit);
         cJSON_AddStringToObject(bookitem,
                                 "retDate", (pCbRet + i)->sretDate);
         cJSON_AddItemToArray(bookarr, bookitem

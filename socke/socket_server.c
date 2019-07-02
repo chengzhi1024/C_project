@@ -75,6 +75,7 @@ int socket_accept(int iSockFd, recv_handle_t callback) {
             if (iRet > 0) {
                 printf("recv:%s\n", sRecvbuf);
                 callback(sRecvbuf, sizeof(sRecvbuf), sSendBuf, sizeof(sSendBuf));
+                memset(sRecvbuf,0, sizeof(sRecvbuf));
             } else {
                 close(iConnFd);
                 break;

@@ -67,9 +67,9 @@ int main() {
 //    cJSON_AddStringToObject(root, "bookPublicationDate", "2019-06-25");
 
 
-    cJSON_AddNumberToObject(root, "messageId", 4002);
-    cJSON_AddStringToObject(root, "userNum", "1");
-//    cJSON_AddStringToObject(root, "bookId", "2001");
+    cJSON_AddNumberToObject(root, "messageId", 4001);
+    cJSON_AddStringToObject(root, "userNum", "2");
+    cJSON_AddStringToObject(root, "bookId", "2001");
 
 //    cJSON_AddNumberToObject(root, "messageId", 2001);
 //    cJSON_AddNumberToObject(root, "start", 20);
