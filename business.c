@@ -1571,7 +1571,7 @@ static void user_search_borrow_info_book_in(cJSON *root, char *pResponse, int iR
         cJSON_AddStringToObject(bookitem,
                                 "bookName", (pCbRet + i)->sbookName);
         cJSON_AddStringToObject(bookitem,
-                                "bookNum", (pCbRet + i)->sbookId);
+                                "bookId", (pCbRet + i)->sbookId);
         cJSON_AddStringToObject(bookitem,
                                 "bookAuthor", (pCbRet + i)->sbookAuthor);
         cJSON_AddStringToObject(bookitem,
@@ -1947,7 +1947,7 @@ static void user_search_return_info_book_in(cJSON *root, char *pResponse, int iR
         cJSON_AddStringToObject(bookitem,
                                 "bookName", (pCbRet + i)->sbookName);
         cJSON_AddStringToObject(bookitem,
-                                "bookNum", (pCbRet + i)->sbookId);
+                                "bookId", (pCbRet + i)->sbookId);
         cJSON_AddStringToObject(bookitem,
                                 "bookAuthor", (pCbRet + i)->sbookAuthor);
         cJSON_AddStringToObject(bookitem,
@@ -1956,7 +1956,7 @@ static void user_search_return_info_book_in(cJSON *root, char *pResponse, int iR
                                 "bookPublisher", (pCbRet + i)->sbookPublisher);
         cJSON_AddStringToObject(bookitem,
                                 "bookPublicationDate", (pCbRet + i)->sbookPublicationDate);
-//        cJSON_AddStringToObject(bookitem,"borRetDateLimit", (pCbRet + i)->sborRetDateLimit);
+        cJSON_AddStringToObject(bookitem,"borRetDateLimit", (pCbRet + i)->sborRetDateLimit);
         cJSON_AddStringToObject(bookitem, "borDate", (pCbRet + i)->sborRetDateLimit);
         cJSON_AddStringToObject(bookitem,
                                 "retDate", (pCbRet + i)->sretDate);
